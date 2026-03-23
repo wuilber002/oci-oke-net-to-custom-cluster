@@ -61,15 +61,15 @@ def deleteResourcesFromList(oci_config, resource_list_file):
 
         print(resource_ocid, end='')
         try:
-            if re.match('^(ocid1\.subnet\.oc1\..*)', resource_ocid):
+            if re.match('^(ocid1.subnet.oc1..*)', resource_ocid):
                 delete_resource_response = core_client.delete_subnet(
                     subnet_id=resource_ocid,
                 )   
-            elif re.match('^(ocid1\.routetable\.oc1\..*)', resource_ocid):
+            elif re.match('^(ocid1.routetable.oc1..*)', resource_ocid):
                 delete_resource_response = core_client.delete_route_table(
                     rt_id=resource_ocid
                 )
-            elif re.match('^(ocid1\.securitylist\.oc1\..*)', resource_ocid):
+            elif re.match('^(ocid1.securitylist.oc1..*)', resource_ocid):
                 delete_resource_response = core_client.delete_security_list(
                     security_list_id=resource_ocid
                 )
@@ -97,7 +97,7 @@ def ExtractRegionFromOCID(ocid):
     Returna a região a qual o OCID faz referencia.
     """
     return(((
-        re.compile('ocid1\.[a-z]{1,}\.oc1.(.*)\..*([a-z 0-9]{60})+')
+        re.compile('ocid1.[a-z]{1,}.oc1.(.*)..*([a-z 0-9]{60})+')
     ).search(ocid)).group(1))
 
 # -----------------------------------------------------------------------------
@@ -250,7 +250,7 @@ if __name__ == '__main__':
     parser.add_argument('-c', '--config', default=None, help="O método padrão de autenticação utilizado pelo script eh o token delegation (presente cloud shell) ou instance principal (policy.dynamic group). Para utilizar o arquivo de configuração \"config\" do OCI CLI, defina o caminho do arquivo de configuração (Ex: ~/.oci/config) com esse parâmetro.")
     parser.add_argument('-o', '--vcn-ocid', default=None, help="OCID da VCN na qual as sub-redes, route tables e security list serão criadas.")
     parser.add_argument('-i', '--input-file', default="./data_input_file.json", help="Arquivo com as informações de criação das subnets do OKE. Exemplo no arquivo data_input_file.json")
-    parser.add_argument('-d', '--destination-compartment-ocid', default=None, help="OCID do compartment no qual os recursos (subnet, route table e security list) serão criados.")
+    parser.add_argument('-d', '--destination-compartment-ocid', default=None, help="OCID do compartment no qual os recursos (subnet, route table e security list) serão criados. Se não especificado, será utilizado o compartment da VCN.")
     args = parser.parse_args()
 
     # -----------------------------------------------------------------------------
@@ -304,7 +304,7 @@ if __name__ == '__main__':
         sys.exit(1)
     else:
         # "ocid1.vcn.oc1.iad.amaaaaaact4jh4ia6qqwg4wq4k4eqjg7bofvhj4oiuixbqhhgyz6f4gkompq"
-        if not re.match('^(ocid1\.vcn\.oc1\..*)', vcn_data['vcn_ocid']):
+        if not re.match('^(ocid1.vcn.oc1..*)', vcn_data['vcn_ocid']):
             print(' [%sERRO%s] O ocid especificado parece nao ter um formato valido.' % (color['red'],color['clean']))
             sys.exit(2)
 
@@ -374,10 +374,10 @@ if __name__ == '__main__':
     else:
         vcn_data["destination_compartment_ocid"]=args.destination_compartment_ocid
 
-    if re.match('^(ocid1\.tenancy\.oc1\..*)', vcn_data['destination_compartment_ocid']):
+    if re.match('^(ocid1.tenancy.oc1..*)', vcn_data['destination_compartment_ocid']):
         print(' [%sERRO%s] VCN CRIADA NO ROOT DO TENANCY. Nao eh recomendado que se utiliza o "root" do tenancy para criar recursos.' % (color['red'],color['clean']))
         sys.exit(2)
-    elif not re.match('^(ocid1\.compartment\.oc1\..*)', vcn_data['destination_compartment_ocid']):
+    elif not re.match('^(ocid1.compartment.oc1..*)', vcn_data['destination_compartment_ocid']):
         print(' [%sERRO%s] O ocid do "compartment" especificado parece nao ter um formato valido.' % (color['red'],color['clean']))
         print(vcn_data['destination_compartment_ocid'])
         sys.exit(2)
@@ -659,6 +659,7 @@ if __name__ == '__main__':
                 compartment_id=vcn_data["destination_compartment_ocid"],
                 prohibit_internet_ingress=PROHIBIT_INTERNET_INGRESS,
                 prohibit_public_ip_on_vnic=PROHIBIT_PUBLIC_IP_ON_VNIC,
+                dns_label=subnet["dns_label"],
                 cidr_block=subnet["cidr_block"],
                 route_table_id=subnet["route_table_ocid"],
                 security_list_ids=[subnet["security_list_ocid"]]
